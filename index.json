@@ -1,0 +1,30 @@
+{
+  "catalogue": [
+    {
+      "nom": "testenvoi.txt",
+      "tailleTotale": 102,
+      "chunks": [
+        {
+          "ordre": 0,
+          "slaveAddress": "127.0.0.1:5002",
+          "tailleChunk": 25
+        },
+        {
+          "ordre": 1,
+          "slaveAddress": "127.0.0.1:5003",
+          "tailleChunk": 25
+        },
+        {
+          "ordre": 2,
+          "slaveAddress": "127.0.0.1:5005",
+          "tailleChunk": 25
+        },
+        {
+          "ordre": 3,
+          "slaveAddress": "127.0.0.1:5004",
+          "tailleChunk": 27
+        }
+      ]
+    }
+  ]
+}
