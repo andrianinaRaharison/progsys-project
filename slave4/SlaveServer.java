@@ -66,8 +66,9 @@ public class SlaveServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    
+
     }
+
     public void close() throws IOException{
             serverSocket.close();
     }
