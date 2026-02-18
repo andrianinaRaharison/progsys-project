@@ -1,0 +1,116 @@
+{
+  "catalogue": [
+    {
+      "nom": "testenvoi.txt",
+      "tailleTotale": 102,
+      "chunks": [
+        {
+          "ordre": 0,
+          "taille": 0
+        },
+        {
+          "ordre": 1,
+          "taille": 0
+        },
+        {
+          "ordre": 2,
+          "taille": 0
+        },
+        {
+          "ordre": 3,
+          "taille": 0
+        }
+      ]
+    },
+    {
+      "nom": "coucou.txt",
+      "tailleTotale": 30,
+      "chunks": [
+        {
+          "ordre": 0,
+          "taille": 0
+        },
+        {
+          "ordre": 1,
+          "taille": 0
+        },
+        {
+          "ordre": 2,
+          "taille": 0
+        },
+        {
+          "ordre": 3,
+          "taille": 0
+        }
+      ]
+    },
+    {
+      "nom": "donne.txt",
+      "tailleTotale": 110,
+      "chunks": [
+        {
+          "ordre": 0,
+          "taille": 0
+        },
+        {
+          "ordre": 1,
+          "taille": 0
+        },
+        {
+          "ordre": 2,
+          "taille": 0
+        },
+        {
+          "ordre": 3,
+          "taille": 0
+        }
+      ]
+    },
+    {
+      "nom": "reipliacation.txt",
+      "tailleTotale": 44,
+      "chunks": [
+        {
+          "ordre": 0,
+          "taille": 11,
+          "slaveAddresses": [
+            "localhost:5002",
+            "localhost:5003",
+            "localhost:5005",
+            "localhost:5004"
+          ]
+        },
+        {
+          "ordre": 1,
+          "taille": 11,
+          "slaveAddresses": [
+            "localhost:5003",
+            "localhost:5005",
+            "localhost:5004",
+            "localhost:5002"
+          ]
+        },
+        {
+          "ordre": 2,
+          "taille": 11,
+          "slaveAddresses": [
+            "localhost:5005",
+            "localhost:5004",
+            "localhost:5002",
+            "localhost:5003"
+          ]
+        },
+        {
+          "ordre": 3,
+          "taille": 11,
+          "slaveAddresses": [
+            "localhost:5004",
+            "localhost:5002",
+            "localhost:5003",
+            "localhost:5005"
+          ]
+        }
+      ]
+    }
+  ]
+}
