@@ -70,31 +70,42 @@ public class MasterServer {
      * - Exécute l’action correspondante
      */
     public void ecoute() {
-        System.out.println("Master en attente sur le port " + serverSocket.getLocalPort() + "...");
+        System.out.println("Master en attente sur le port " + serverSocket.getLocalPort());
         while (true) {
-            try (Socket clientSocket = serverSocket.accept();
-                 DataInputStream in = new DataInputStream(clientSocket.getInputStream());
-                 DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream())) {
-
-                String commande = in.readUTF();
-
-                if (commande.equals("UPLOAD")) {
-                    String nomFichier = in.readUTF();
-                    long tailleTotale = in.readLong();
-                    System.out.println("Réception de : " + nomFichier + " (" + tailleTotale + " octets)");
-                    diffuserEnStreaming(nomFichier, tailleTotale, in);
-                    out.writeUTF("SUCCESS");
-
-                } else if (commande.equals("DOWNLOAD")) {
-                    String nomFichier = in.readUTF();
-                    envoyerAuClient(nomFichier, out);
-                }
-
+            try {
+                Socket clientSocket = serverSocket.accept();
+                new Thread(() -> traiterClient(clientSocket)).start();
             } catch (IOException e) {
-                System.err.println("Erreur client : " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
+
+    private void traiterClient(Socket clientSocket) {
+        try (
+                DataInputStream in = new DataInputStream(clientSocket.getInputStream());
+                DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream())
+        ) {
+            String commande = in.readUTF();
+
+            if (commande.equals("UPLOAD")) {
+                String nomFichier = in.readUTF();
+                long tailleTotale = in.readLong();
+                diffuserEnStreaming(nomFichier, tailleTotale, in);
+                out.writeUTF("SUCCESS");
+
+            } else if (commande.equals("DOWNLOAD")) {
+                String nomFichier = in.readUTF();
+                envoyerAuClient(nomFichier, out);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 
     /**
      * UPLOAD : découpe le fichier reçu et l’envoie aux Slaves
@@ -144,12 +155,16 @@ public class MasterServer {
         sauvegarderMetadata(metadata);
     }
 
+
+
     /**
      * DOWNLOAD : recompose le fichier en récupérant les morceaux depuis les Slaves
      */
     private void envoyerAuClient(String nomFichier, DataOutputStream clientOut) throws IOException {
+
         Gson gson = new Gson();
         File indexFile = new File("index.json");
+
         if (!indexFile.exists()) {
             clientOut.writeUTF("NOT_FOUND");
             return;
@@ -176,28 +191,32 @@ public class MasterServer {
         byte[] buffer = new byte[8192];
 
         for (InfoMorceau chunk : fichier.chunks) {
+
             String[] parts = chunk.slaveAddress.split(":");
             String ip = parts[0];
             int port = Integer.parseInt(parts[1]);
 
-            try (Socket slaveSocket = new Socket(ip, port);
-                 DataOutputStream slaveOut = new DataOutputStream(slaveSocket.getOutputStream());
-                 DataInputStream slaveIn = new DataInputStream(slaveSocket.getInputStream())) {
-
-                // Demande au Slave d’envoyer le morceau
+            try (
+                    Socket slaveSocket = new Socket(ip, port);
+                    DataOutputStream slaveOut = new DataOutputStream(slaveSocket.getOutputStream());
+                    DataInputStream slaveIn = new DataInputStream(slaveSocket.getInputStream())
+            ) {
                 slaveOut.writeUTF("DOWNLOAD");
                 slaveOut.writeUTF(nomFichier + ".part" + chunk.ordre);
 
-                long restant = chunk.tailleChunk;
+                String status = slaveIn.readUTF();
+                if (!status.equals("FOUND")) continue;
+
+                long restant = slaveIn.readLong();
+
                 while (restant > 0) {
-                    int lus = slaveIn.read(buffer, 0, (int) Math.min(buffer.length, restant));
+                    int lus = slaveIn.read(buffer, 0, (int)Math.min(buffer.length, restant));
                     if (lus == -1) break;
                     clientOut.write(buffer, 0, lus);
                     restant -= lus;
                 }
             }
         }
-
     }
 
     /**

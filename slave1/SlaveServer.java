@@ -55,58 +55,55 @@ public class SlaveServer {
      * - Exécute l'action correspondante
      */
     public void ecoute() {
-        try (Socket socket = serverSocket.accept()) {
+        while (true) {
+            try (Socket socket = serverSocket.accept()) {
 
-            // Vérification de l'origine de la connexion
-            if (!socket.getInetAddress().equals(masterIP)) {
-                socket.close();
-                return;
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+                String commande = in.readUTF();
+
+                if (commande.equals("UPLOAD")) {
+                    recevoirFichier(in);
+                } else if (commande.equals("DOWNLOAD")) {
+                    envoyerFichier(in, out);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-
-            // Lecture de la commande envoyée par le Master
-            String commande = in.readUTF();
-
-            if (commande.equals("UPLOAD")) {
-                // Réception d’un morceau de fichier
-                recevoirFichier(in);
-
-            } else if (commande.equals("DOWNLOAD")) {
-                // Envoi d’un morceau de fichier
-                envoyerFichier(in, out);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
+
 
     /**
      * Réception d’un fichier/morceau depuis le Master
      * @param in flux d’entrée (données envoyées par le Master)
      */
     private void recevoirFichier(DataInputStream in) throws IOException {
-        String nomFichier = in.readUTF();   // Nom du fichier/morceau
-        long taille = in.readLong();        // Taille du fichier/morceau
 
-        Path fichier = baseDir.resolve(nomFichier); // Chemin local de stockage
+        String nomFichier = in.readUTF();
+        long taille = in.readLong();
 
-        try (OutputStream fileOut = Files.newOutputStream(fichier)) {
+        Path fichier = baseDir.resolve(nomFichier);
+
+        try (OutputStream out = Files.newOutputStream(fichier)) {
             byte[] buffer = new byte[4096];
             long total = 0;
             int read;
 
-            // Lecture et écriture des octets jusqu’à atteindre la taille attendue
-            while (total < taille && (read = in.read(buffer)) != -1) {
-                fileOut.write(buffer, 0, read);
+            while (total < taille &&
+                    (read = in.read(buffer, 0,
+                            (int)Math.min(buffer.length, taille - total))) != -1) {
+
+                out.write(buffer, 0, read);
                 total += read;
             }
         }
 
-        System.out.println("Fichier reçu : " + fichier);
+        System.out.println("Morceau reçu : " + fichier);
     }
+
 
     /**
      * Envoi d’un fichier/morceau au Master
@@ -114,29 +111,30 @@ public class SlaveServer {
      * @param out flux de sortie (données envoyées au Master)
      */
     private void envoyerFichier(DataInputStream in, DataOutputStream out) throws IOException {
-        String nomFichier = in.readUTF();   // Nom du fichier/morceau demandé
+
+        String nomFichier = in.readUTF();
         Path fichier = baseDir.resolve(nomFichier);
 
         if (!Files.exists(fichier)) {
-            out.writeUTF("NOT_FOUND"); // Si le fichier n’existe pas
+            out.writeUTF("NOT_FOUND");
             return;
         }
 
-        long taille = Files.size(fichier);
-        out.writeUTF("FOUND");        // Confirmation que le fichier existe
-        out.writeLong(taille);        // Envoi de la taille
+        out.writeUTF("FOUND");
+        out.writeLong(Files.size(fichier));
 
         try (DataInputStream fileIn = new DataInputStream(Files.newInputStream(fichier))) {
             byte[] buffer = new byte[4096];
             int read;
-            // Lecture et envoi des octets au Master
+
             while ((read = fileIn.read(buffer)) != -1) {
                 out.write(buffer, 0, read);
             }
         }
 
-        System.out.println("Fichier envoyé : " + fichier);
+        System.out.println("Morceau envoyé : " + fichier);
     }
+
 
     /**
      * Fermeture du serveur
